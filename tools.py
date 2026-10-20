@@ -1,29 +1,35 @@
 import requests
 
-URL = 'https://api.apilayer.com/fixer/latest'
+URL = 'https://api.openweathermap.org/data/2.5/weather'
 API_KEY = 'your api key'
 
 if not API_KEY:
     raise RuntimeError("API_KEY is not set")
 
 
-def get_exchange_rate(from_currency, to_currency):
-    from_currency = from_currency.upper()
-    to_currency = to_currency.upper()
+def get_weather(city):
     try:
-        resp = requests.get(URL, params={'base': from_currency, 'symbols': to_currency}, headers={'apikey': API_KEY})
+        resp = requests.get(URL, params={"appid": API_KEY, "q": city, "units": "metric"}, timeout=10)
     except requests.RequestException:
-        return f"Could not reach the exchange rate service to check {from_currency} to {to_currency}"
+        return f"Could not reach the weather service to check {city}"
+
+    if resp.status_code == 400:
+        return f"{city} is not a recognized city"
+    resp.raise_for_status()
+
     data = resp.json()
-    if resp.status_code != 200 or not data.get('success', True):
-        return f"Could not get exchange rate for {from_currency} to {to_currency}"
-    rate = data.get('rates', {}).get(to_currency)
-    if rate is None:
-        return f"{to_currency} is not valid currency"
+    city = data['name']
+    country = data['sys']['country']
+    temp = data['main']['temp']
+    wind_kph = data['wind']['speed']
+    humidity = data['main']['humidity']
+    return (
+        f"Weather in {city} ({country}): "
+        f"temperature is {temp}°C"
+        f"speed of wind: {wind_kph} kph, Humidity is {humidity}%"
+    )
 
-    return f"one {from_currency} = {rate} {to_currency}"
 
-
-TOOLS = {
-    'get_exchange_rate': get_exchange_rate
+TOOLS: dict = {
+    "get_weather": get_weather
 }
