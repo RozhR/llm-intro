@@ -1,15 +1,16 @@
 import requests
+import os
 
 URL = 'https://api.openweathermap.org/data/2.5/weather'
-API_KEY = 'your api key'
+WEATHER_API_KEY = os.environ.get("WEATHER_API_KEY")
 
-if not API_KEY:
+if not WEATHER_API_KEY:
     raise RuntimeError("API_KEY is not set")
 
 
 def get_weather(city):
     try:
-        resp = requests.get(URL, params={"appid": API_KEY, "q": city, "units": "metric"}, timeout=10)
+        resp = requests.get(URL, params={"appid": WEATHER_API_KEY, "q": city, "units": "metric"}, timeout=10)
     except requests.RequestException:
         return f"Could not reach the weather service to check {city}"
 
