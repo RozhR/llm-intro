@@ -1,4 +1,4 @@
-import requests
+import httpx
 import os
 
 URL = 'https://api.openweathermap.org/data/2.5/weather'
@@ -8,10 +8,11 @@ if not WEATHER_API_KEY:
     raise RuntimeError("API_KEY is not set")
 
 
-def get_weather(city):
+async def get_weather(city):
     try:
-        resp = requests.get(URL, params={"appid": WEATHER_API_KEY, "q": city, "units": "metric"}, timeout=10)
-    except requests.RequestException:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(URL, params={"appid": WEATHER_API_KEY, "q": city, "units": "metric"})
+    except httpx.RequestError:
         return f"Could not reach the weather service to check {city}"
 
     if resp.status_code == 400:
