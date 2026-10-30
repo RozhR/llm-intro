@@ -18,6 +18,20 @@ class CountryInfo:
     currency_code: str
     currency_name: str
 
+def _best_match(objects: list[dict], country_name: str) -> dict:
+    query = country_name.strip().casefold()
+    for item in objects:
+        codes = item.get("codes", {})
+        if query in (
+            str(codes.get("alpha_2", "")).casefold(),
+            str(codes.get("alpha_3", "")).casefold(),
+        ):
+            return item
+    for item in objects:
+        if item.get("names", {}).get("common", "").casefold() == query:
+            return item
+    return objects[0]
+
 
 async def get_country_info(country_name: str) -> CountryInfo:
     logger.debug(f"Fetching country info for {country_name}")
@@ -39,7 +53,7 @@ async def get_country_info(country_name: str) -> CountryInfo:
     if not objects:
         logger.warning(f"Country {country_name} not found")
         raise HTTPException(status_code=400, detail=f"Country info not found: {country_name}")
-    item = objects[0]
+    item = _best_match(objects, country_name)
     try:
         capital = item["capitals"][0]["name"]
         currency_code = item["currencies"][0]["code"]
