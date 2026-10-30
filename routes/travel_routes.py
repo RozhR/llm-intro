@@ -59,3 +59,21 @@ async def post_travel_info(payload: TravelInfoRequest, request: Request) -> Trav
     )
     set_last_pair(payload.country_from, payload.country_to)
     return result
+
+@router.get("/info", response_model=TravelInfoResponse)
+async def get_travel_info(
+        request: Request,
+        country_from: str | None = None,
+        country_to: str | None = None
+) -> TravelInfoResponse:
+    request.state.travel_flags = ALL_TRUE_FLAGS
+    if (country_from is None) != (country_to is None):
+        raise HTTPException(status_code=400, detail="Both country_from and country_to must be provided together")
+
+    if country_from is None and country_to is None:
+        cached = get_last_pair()
+        if cached is None:
+            raise HTTPException(status_code=404, detail="No country pair found")
+        country_from, country_to = cached
+
+    return await _build_travel_info(country_from, country_to, **request.state.travel_flags)
